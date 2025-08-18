@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Виртуальное окружение
+venv/
+.env/
+.venv/
+env/
+ENV/
+
+# Секреты и конфиги
+*.env
+config.json
+
+# IDE / редакторы
+.idea/
+*.swp
+
+# Логи
+*.log
+
