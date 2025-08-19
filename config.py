@@ -1,9 +1,9 @@
-from os import getenv
-from dotenv import load_dotenv
 import os
-
+from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN = getenv("TOKEN")
-MANAGER_ID = int(os.getenv("MANAGER"))
+BOT_TOKEN = os.getenv("TOKEN")
+
+ADMINS = [123456789]
+DRIVERS = [987654321, 123123123]
