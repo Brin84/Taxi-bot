@@ -1,4 +1,3 @@
-# keyboards/reply.py
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 def reply_drive_menu():
