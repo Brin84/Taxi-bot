@@ -4,6 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
 from keyboards.reply import reply_income_menu, reply_back_button
+from keyboards.reply import reply_drive_menu
+from services.google_sheets import add_income
 
 router = Router()
 
@@ -32,8 +34,37 @@ async def income_type_chosen(message: Message, state: FSMContext):
     await state.set_state(IncomeStates.waiting_comment)
 
 
+@router.message(IncomeStates.waiting_comment)
+async def income_comment_entered(message: Message, state: FSMContext):
+    """Получение комментария и запрос суммы"""
+    await state.update_data(comment=message.text)
+    await message.answer("Введите сумму дохода:")
+    await state.set_state(IncomeStates.waiting_amount)
+
+
+@router.message(IncomeStates.waiting_amount)
+async def income_amount_entered(message: Message, state: FSMContext):
+    """Получение суммы и сохранение дохода в Google Sheets"""
+    try:
+        amount = float(message.text.replace(",", "."))
+    except ValueError:
+        await message.answer("Введите сумму числом:")
+        return
+
+    data = await state.get_data()
+    add_income(
+        driver_id=message.from_user.id,
+        income_type=data["income_type"],
+        comment=data["comment"],
+        amount=amount
+    )
+
+    await message.answer("Доход успешно добавлен ✅", reply_markup=reply_drive_menu())
+    await state.clear()
+
+
 @router.message(F.text == "Назад ⬅️")
 async def back_button(message: Message, state: FSMContext):
     """Возврат в главное меню дохода"""
     await state.clear()
-    await message.answer("Возврат в меню ", reply_markup=reply_income_menu())
+    await message.answer("Возврат в меню", reply_markup=reply_income_menu())
