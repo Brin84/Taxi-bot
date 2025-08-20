@@ -5,5 +5,5 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("TOKEN")
 
-ADMINS = [123456789]
-DRIVERS = [987654321, 123123123]
+ADMIN = int(os.getenv("ADMIN"))
+DRIVERS = [6877046695]
