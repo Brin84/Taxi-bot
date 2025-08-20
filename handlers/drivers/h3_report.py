@@ -6,7 +6,7 @@ router = Router()
 
 
 @router.message(F.text == "📊 Отчёт")
-async def h3_report_handler(message: Message):
+async def report_handler(message: Message):
     """Обработчик кнопки '📊 Отчёт' для водителей"""
     user_id = message.from_user.id
     if not is_driver(user_id):

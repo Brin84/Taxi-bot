@@ -15,7 +15,7 @@ class ExpenseStates(StatesGroup):
 
 
 @router.message(F.text == "💸 Расход")
-async def h2_expense_handler(message: Message, state: FSMContext):
+async def expense_handler(message: Message, state: FSMContext):
     """Начало ввода расхода — выбор категории"""
     user_id = message.from_user.id
     if not is_driver(user_id):
