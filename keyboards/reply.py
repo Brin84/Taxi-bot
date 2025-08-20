@@ -20,11 +20,17 @@ def reply_admin_menu():
     build.adjust(1, 3)
     return build.as_markup(resize_keyboard=True)
 
-def income_menu():
+def reply_income_menu():
     """Клавиатура для меню дохода водителя"""
     build = ReplyKeyboardBuilder()
-    build.button(text="Добавить наличные 💵")
-    build.button(text="Добавить безнал 🏦")
+    build.button(text="Оплата за заказ")
+    build.button(text="Доплата по заказу")
     build.button(text="Назад 🔙")
     build.adjust(1, 2)
     return build.as_markup(resize_keyboard=True)
+
+def reply_back_button():
+    """клавиатура для шага назад"""
+    builder = ReplyKeyboardBuilder()
+    builder.button(text="Назад ⬅️")
+    return builder.as_markup(resize_keyboard=True)
