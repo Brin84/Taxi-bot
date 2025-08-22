@@ -5,15 +5,17 @@ from aiogram.fsm.state import StatesGroup, State
 
 from keyboards.reply import reply_income_menu, reply_back_button
 from keyboards.reply import reply_drive_menu
-from services.google_sheets import add_income
+from services.google_sheets import add_record
+
+# from services.google_sheets import add_income
 
 router = Router()
 
 class IncomeStates(StatesGroup):
     """FSM для выбора и добавления дохода"""
     choosing_type = State()
-    waiting_comment = State()
     waiting_amount = State()
+    waiting_comment = State()
 
 
 @router.message(F.text == "Добавить доход 💰")
@@ -27,44 +29,70 @@ async def start_income(message: Message, state: FSMContext):
 
 
 @router.message(IncomeStates.choosing_type, F.text.in_(["Оплата за заказ", "Доплата по заказу"]))
-async def income_type_chosen(message: Message, state: FSMContext):
-    """Обработка выбора типа дохода и запрос комментария"""
+async def ask_income_amount(message: Message, state: FSMContext):
+    """Запрос суммы дохода"""
     await state.update_data(income_type=message.text)
-    await message.answer("Введите комментарий к доходу:", reply_markup=reply_back_button())
-    await state.set_state(IncomeStates.waiting_comment)
-
-
-@router.message(IncomeStates.waiting_comment)
-async def income_comment_entered(message: Message, state: FSMContext):
-    """Получение комментария и запрос суммы"""
-    await state.update_data(comment=message.text)
-    await message.answer("Введите сумму дохода:")
+    await message.answer("Введите сумму:", reply_markup=reply_back_button())
     await state.set_state(IncomeStates.waiting_amount)
 
 
 @router.message(IncomeStates.waiting_amount)
-async def income_amount_entered(message: Message, state: FSMContext):
-    """Получение суммы и сохранение дохода в Google Sheets"""
+async def ask_income_comment(message: Message, state: FSMContext):
+    """Запрос комментария"""
+    if message.text == "Назад ⬅️":
+        await state.set_state(IncomeStates.choosing_type)
+        await message.answer("Выберите тип дохода:", reply_markup=reply_income_menu())
+        return
+
     try:
         amount = float(message.text.replace(",", "."))
     except ValueError:
-        await message.answer("Введите сумму числом:")
+        await message.answer("❌ Введите корректную сумму или нажмите 'Назад ⬅️'.")
         return
 
-    data = await state.get_data()
-    add_income(
-        driver_id=message.from_user.id,
-        income_type=data["income_type"],
-        comment=data["comment"],
-        amount=amount
+    await state.update_data(amount=amount)
+    await message.answer("Добавьте комментарий (например: Гоголя 17)", reply_markup=reply_back_button())
+    await state.set_state(IncomeStates.waiting_comment)
+
+
+@router.message(IncomeStates.waiting_comment)
+async def confirm_income(message: Message, state: FSMContext):
+    """Подтверждение дохода"""
+    user_data = await state.get_data()
+
+    income_type = user_data['income_type']
+    amount = user_data['amount']
+    comment = message.text
+
+    subcategory = "оплата" if income_type == "Оплата за заказ" else "доплата"
+
+    add_record(
+        user_id=message.from_user.id,
+        username=message.from_user.full_name,
+        record_type='доход',
+        subcategory=subcategory,
+        amount=amount,
+        comment=comment
     )
 
-    await message.answer("Доход успешно добавлен ✅", reply_markup=reply_drive_menu())
+    await message.answer(
+        f"✅ Доход зарегистрирован:\n"
+        f"Тип: {income_type}\n"
+        f"Сумма: {amount:.2f} ₽\n"
+        f"Комментарий: {comment}",
+        reply_markup=reply_income_menu()
+    )
     await state.clear()
-
 
 @router.message(F.text == "Назад ⬅️")
 async def back_button(message: Message, state: FSMContext):
-    """Возврат в главное меню дохода"""
+    """Возврат в меню дохода"""
     await state.clear()
     await message.answer("Возврат в меню", reply_markup=reply_income_menu())
+
+
+@router.message(F.text == "🔙 Назад")
+async def back_to_main_menu(message: Message, state: FSMContext):
+    """Возврат в главное меню"""
+    await state.clear()
+    await message.answer("Возврат в главное меню", reply_markup=reply_drive_menu())
