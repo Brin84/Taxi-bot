@@ -25,7 +25,7 @@ def reply_income_menu():
     build = ReplyKeyboardBuilder()
     build.button(text="Оплата за заказ")
     build.button(text="Доплата по заказу")
-    build.button(text="Назад 🔙")
+    build.button(text="🔙 Назад")
     build.adjust(1, 2)
     return build.as_markup(resize_keyboard=True)
 
@@ -33,4 +33,12 @@ def reply_back_button():
     """клавиатура для шага назад"""
     builder = ReplyKeyboardBuilder()
     builder.button(text="Назад ⬅️")
+    return builder.as_markup(resize_keyboard=True)
+
+def reply_report_period():
+    """клавиатура для отчета водителям за определенный период"""
+    builder = ReplyKeyboardBuilder()
+    builder.button(text="За месяц 📅")
+    builder.button(text="За день 📆")
+    builder.button(text="Назад ↩")
     return builder.as_markup(resize_keyboard=True)
