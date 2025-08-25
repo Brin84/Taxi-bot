@@ -3,79 +3,65 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
-from keyboards.reply import reply_back_button, reply_drive_menu
-# from services.google_sheets import add_expense
+from keyboards.reply import reply_expense_back, reply_drive_menu
+from services.google_sheets import add_record
 
 router = Router()
 
 class ExpenseStates(StatesGroup):
-    """FSM для добавления расхода"""
-    choosing_type = State()
-    waiting_comment = State()
-    waiting_amount = State()
+    """FSM для расходов"""
+    waiting_for_amount_and_comment = State()
 
 
 @router.message(F.text == "Добавить расход 🧾")
 async def start_expense(message: Message, state: FSMContext):
     """Начало добавления расхода"""
     await message.answer(
-        "Введите тип расхода:",
-        reply_markup=reply_back_button()
+        "<b>Укажите расход:</b>\n"
+        "Пример:⏬\n"
+        "<i>20 топливо</i>\n",
+        reply_markup=reply_expense_back(),
+        parse_mode="HTML"
     )
-    await state.set_state(ExpenseStates.choosing_type)
+    await state.set_state(ExpenseStates.waiting_for_amount_and_comment)
 
 
-# @router.message(ExpenseStates.choosing_type)
-# async def expense_type_chosen(message: Message, state: FSMContext):
-#     """Сохранение типа расхода и запрос комментария"""
-#     await state.update_data(expense_type=message.text)
-#     await message.answer(
-#         "Введите комментарий:",
-#         reply_markup=reply_back_button()
-#     )
-#     await state.set_state(ExpenseStates.waiting_comment)
+@router.message(ExpenseStates.waiting_for_amount_and_comment)
+async def process_expense(message: Message, state: FSMContext):
+    """Получение суммы и комментария"""
+    if message.text == "🔙 Назад":
+        await state.clear()
+        await message.answer("Возврат в главное меню", reply_markup=reply_drive_menu())
+        return
+
+    try:
+        parts = message.text.split(maxsplit=1)
+        amount = float(parts[0].replace(",", "."))
+        comment = parts[1] if len(parts) > 1 else "-"
+    except (ValueError, IndexError):
+        await message.answer("❌ Введите корректно, например: 20 заправка")
+        return
+
+    add_record(
+        user_id=message.from_user.id,
+        username=message.from_user.full_name,
+        record_type='расход',
+        subcategory="расход",
+        amount=amount,
+        comment=comment
+    )
+
+    await message.answer(
+        f"✅ Расход зарегистрирован:\n"
+        f"Сумма: {amount:.2f} ₽\n"
+        f"Комментарий: {comment}",
+        reply_markup=reply_drive_menu()
+    )
+    await state.clear()
 
 
-# @router.message(ExpenseStates.waiting_comment)
-# async def expense_comment_entered(message: Message, state: FSMContext):
-#     """Сохранение комментария и запрос суммы"""
-#     await state.update_data(comment=message.text)
-#     await message.answer(
-#         "Введите сумму расхода:",
-#         reply_markup=reply_back_button()
-#     )
-#     await state.set_state(ExpenseStates.waiting_amount)
-
-
-# @router.message(ExpenseStates.waiting_amount)
-# async def expense_amount_entered(message: Message, state: FSMContext):
-#     """Получение суммы и сохранение расхода в Google Sheets"""
-#     try:
-#         amount = float(message.text.replace(",", "."))
-#     except ValueError:
-#         await message.answer("Введите сумму числом:")
-#         return
-#
-#     data = await state.get_data()
-#     add_expense(
-#         driver_id=message.from_user.id,
-#         expense_type=data["expense_type"],
-#         comment=data["comment"],
-#         amount=amount
-#     )
-#
-#     await message.answer(
-#         "Расход успешно добавлен ✅",
-#         reply_markup=reply_drive_menu()
-#     )
-#     await state.clear()
-
-
-# @router.message(F.text == "Назад ⬅️")
-# async def back_button(message: Message, state: FSMContext):
-#     """Возврат в меню водителя"""
-#     await state.clear()
-#     await message.answer(
-#         "Возврат в меню",
-#         reply_markup=reply_drive_menu()
-#     )
+@router.message(F.text == "🔙 Назад")
+async def back_to_main_menu(message: Message, state: FSMContext):
+    """Возврат в главное меню"""
+    await state.clear()
+    await message.answer("Возврат в главное меню", reply_markup=reply_drive_menu())

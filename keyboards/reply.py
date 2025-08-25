@@ -42,3 +42,10 @@ def reply_report_period():
     builder.button(text="За день 📆")
     builder.button(text="Назад ↩")
     return builder.as_markup(resize_keyboard=True)
+
+
+def reply_expense_back():
+    """Кнопка возврата в главное меню из расходов"""
+    build = ReplyKeyboardBuilder()
+    build.button(text="🔙 Назад")
+    return build.as_markup(resize_keyboard=True)
