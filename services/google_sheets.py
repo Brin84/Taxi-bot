@@ -10,3 +10,6 @@ def add_record(user_id: int, username: str, record_type: str, subcategory: str, 
         f"Сумма: {amount}\n"
         f"Комментарий: {comment}\n"
     )
+
+def get_admin_summary(period: str):
+    pass
