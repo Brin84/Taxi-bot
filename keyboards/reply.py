@@ -1,4 +1,6 @@
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+
 
 def reply_drive_menu():
     """Клавиатура для водителя"""
@@ -8,6 +10,7 @@ def reply_drive_menu():
     build.button(text="Отчёт 📊")
     build.adjust(1, 3)
     return build.as_markup(resize_keyboard=True)
+
 
 def reply_admin_menu():
     """Клавиатура для администратора"""
@@ -20,6 +23,20 @@ def reply_admin_menu():
     build.adjust(1, 3)
     return build.as_markup(resize_keyboard=True)
 
+
+def reply_admin_report_menu():
+    """Отчет для администратора за определенный период"""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📆 Сегодня")],
+            [KeyboardButton(text="📅 Этот месяц")],
+            [KeyboardButton(text="⌚ Всё время")],
+            [KeyboardButton(text="⏪ Назад")],
+        ],
+        resize_keyboard=True
+    )
+
+
 def reply_income_menu():
     """Клавиатура для меню дохода водителя"""
     build = ReplyKeyboardBuilder()
@@ -29,11 +46,13 @@ def reply_income_menu():
     build.adjust(1, 2)
     return build.as_markup(resize_keyboard=True)
 
+
 def reply_back_button():
     """клавиатура для шага назад"""
     builder = ReplyKeyboardBuilder()
     builder.button(text="Назад ⬅️")
     return builder.as_markup(resize_keyboard=True)
+
 
 def reply_report_period():
     """клавиатура для отчета водителям за определенный период"""
