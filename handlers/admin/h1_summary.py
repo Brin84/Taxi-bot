@@ -31,11 +31,20 @@ async def admin_summary_today(message: Message):
     await message.answer(f"отчет за сегодня\n {report}")
 
 
+@router.message(F.text == "📅 Этот месяц")
+async def admin_summary_month(message: Message):
+    report = get_admin_summary("month")
+    await message.answer(f"отчет за месяц\n {report}")
+
+
+@router.message(F.text == "⌚ Всё время")
+async def admin_summary_all(message: Message):
+    report = get_admin_summary("all")
+    await message.answer(f"отчет за всё время\n {report}")
+
+
 @router.message(F.text == "⏪ Назад")
 async def admin_summary_back(message: Message, state: FSMContext):
     """Возврат в админ-меню"""
     await state.clear()
     await message.answer('Админ меню', reply_markup=reply_admin_menu())
-
-
-
