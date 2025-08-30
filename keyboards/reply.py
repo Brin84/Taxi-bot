@@ -20,7 +20,8 @@ def reply_admin_menu():
     build.button(text="Удалить водителя ❌")
     build.button(text="Экспорт данных 📤")
     build.button(text="Настройки ⚙")
-    build.adjust(1, 3)
+    build.button(text="⏪ Назад")
+    build.adjust(1, 3, 2)
     return build.as_markup(resize_keyboard=True)
 
 
