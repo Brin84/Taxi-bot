@@ -79,3 +79,16 @@ def reply_expense_back():
     build = ReplyKeyboardBuilder()
     build.button(text="🔙 Назад")
     return build.as_markup(resize_keyboard=True)
+
+
+def reply_export_report():
+    """Выгрузка отчета (админ)"""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📆 За день")],
+            [KeyboardButton(text="📅 За месяц")],
+            [KeyboardButton(text="⌚ За всё время")],
+            [KeyboardButton(text="⏪ Назад")],
+        ],
+        resize_keyboard=True
+    )
