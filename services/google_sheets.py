@@ -4,7 +4,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from config import GOOGLE_CREDENTIALS_PATH
 
-scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+scope = ["https://www.googleapis.com/auth/spreadsheets",
+         "https://www.googleapis.com/auth/drive"]
 
 with open(GOOGLE_CREDENTIALS_PATH, 'r', encoding='utf-8') as f:
     creds_dict = json.load(f)
@@ -60,8 +61,7 @@ def get_all_records():
 def get_records_by_day(user_id: int, date: str):
     """Получение записей по пользователю за день"""
     rows = get_all_records()
-    filtered = [row for row in rows if row[0] == date and str(row[6]) == str(user_id)]
-    return filtered
+    return [row for row in rows if row[0] == date and str(row[6]) == str(user_id)]
 
 
 def get_records_by_month(user_id: int, month: int, year: int):
@@ -73,40 +73,64 @@ def get_records_by_month(user_id: int, month: int, year: int):
             row_date = datetime.strptime(row[0], "%d.%m.%Y")
             if row_date.month == month and row_date.year == year and str(row[6]) == str(user_id):
                 filtered.append(row)
-        except (ValueError, IndexError):
+        except:
             continue
     return filtered
 
 
 def get_admin_summary(period: str):
-    """Получение сводной информации по всем пользователям за указанный период"""
-    rows = get_all_records()
-    today_str = datetime.now().strftime("%d.%m.%Y")
-    month_str = datetime.now().strftime("%m.%Y")
+    """Сводный отчёт по всем пользователям"""
+    all_rows = sheet.get_all_values()
+    if not all_rows or len(all_rows) < 2:
+        return "Нет данных."
+
+    headers = [h.lower() for h in all_rows[0]]
+    rows = all_rows[1:]
+
+    today = datetime.now().date()
+    this_month = today.month
+    this_year = today.year
 
     summary = {}
-    for row in rows:
-        if len(row) < 8:
-            continue
-        date, _, record_type, _, amount, _, _, username = row
 
-        if period == "day" and date != today_str:
+    for row in rows:
+        if len(row) < len(headers):
             continue
-        if period == "month" and not date.endswith(month_str):
+
+        record = dict(zip(headers, row))
+        raw_date = record.get("дата")
+        record_type = record.get("тип", "").strip().lower()
+        amount = record.get("сумма")
+        username = record.get("имя", "Без имени")
+
+        try:
+            row_date = datetime.strptime(raw_date, "%d.%m.%Y").date()
+        except:
+            try:
+                row_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+            except:
+                continue
+
+        if period == "day" and row_date != today:
+            continue
+        if period == "month" and not (row_date.month == this_month and row_date.year == this_year):
             continue
 
         try:
             amount = float(amount)
-        except ValueError:
+        except:
             continue
 
         if username not in summary:
             summary[username] = {"income": 0, "expense": 0}
 
-        if record_type.lower() == "доход":
+        if record_type == "доход":
             summary[username]["income"] += amount
-        elif record_type.lower() == "расход":
+        elif record_type == "расход":
             summary[username]["expense"] += amount
+
+    if not summary:
+        return "Нет данных за выбранный период."
 
     lines = []
     total_income = 0
@@ -123,8 +147,9 @@ def get_admin_summary(period: str):
     lines.append(f"Расход: {total_expense:.2f} Byn")
     lines.append(f"Разница: {total_income - total_expense:.2f} Byn")
 
-    return "\n".join(lines) if lines else "Нет данных за выбранный период."
+    return "\n".join(lines)
 
 
 def get_all_data():
+    """Для экспорта"""
     return sheet.get_all_values()

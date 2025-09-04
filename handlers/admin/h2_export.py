@@ -22,21 +22,26 @@ async def export_report_handler(message: Message):
 
     columns = [col.strip().lower() for col in all_data[0]]
     df = pd.DataFrame(all_data[1:], columns=columns)
-    print(df.columns)
+
+    df["дата"] = pd.to_datetime(df["дата"], errors="coerce", dayfirst=True)
+
     now = datetime.now()
     period_text = message.text
 
     if period_text == "📆 За день":
-        df = df[df['дата'] == now.strftime("%d.%m.%Y")]
+        df = df[df["дата"].dt.date == now.date()]
         file_name = f"export_day_{now.strftime('%Y-%m-%d')}.xlsx"
 
     elif period_text == "📅 За месяц":
-        month_year = now.strftime("%m.%Y")
-        df = df[df['дата'].str.endswith(month_year)]
+        df = df[(df["дата"].dt.month == now.month) & (df["дата"].dt.year == now.year)]
         file_name = f"export_month_{now.strftime('%Y-%m')}.xlsx"
 
     else:
         file_name = f"export_all_{now.strftime('%Y-%m-%d')}.xlsx"
+
+    if df.empty:
+        await message.answer("❌ Данных за выбранный период нет.")
+        return
 
     with pd.ExcelWriter(file_name, engine="xlsxwriter") as writer:
         df.to_excel(writer, sheet_name="Все записи", index=False)
