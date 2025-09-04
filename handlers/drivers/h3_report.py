@@ -2,8 +2,10 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from datetime import datetime
 
 from keyboards.reply import reply_report_period, reply_drive_menu
+from services.google_sheets import get_records_by_day, get_records_by_month
 
 router = Router()
 
@@ -26,19 +28,46 @@ async def start_report(message: Message, state: FSMContext):
 @router.message(ReportStates.choosing_period, F.text.in_(["За день 📆", "За месяц 📅"]))
 async def show_report(message: Message, state: FSMContext):
     """Вывод отчёта по выбранному периоду"""
+    user_id = message.from_user.id
+    today = datetime.now()
     period = "день" if "день" in message.text.lower() else "месяц"
 
-    income = 1500.00
-    expense = 300.00
-    balance = income - expense
+    if period == "день":
+        date_str = today.strftime("%d.%m.%Y")
+        records = get_records_by_day(user_id, date_str)
+    else:
+        records = get_records_by_month(user_id, today.month, today.year)
 
-    await message.answer(
-        f"📊 Отчёт за {period}:\n\n"
-        f"Доходы: {income:.2f} ₽\n"
-        f"Расходы: {expense:.2f} ₽\n"
-        f"Баланс: {balance:.2f} ₽",
-        reply_markup=reply_drive_menu()
-    )
+    income = 0
+    expense = 0
+
+    for row in records:
+        record_type = row[2].strip().lower()
+        try:
+            amount = float(row[4])
+        except:
+            continue
+
+        if record_type == "доход":
+            income += amount
+        elif record_type == "расход":
+            expense += amount
+
+    if not records:
+        await message.answer(
+            f"📊 Отчёт за {period}:\n\nНет данных за выбранный период.",
+            reply_markup=reply_drive_menu()
+        )
+    else:
+        balance = income - expense
+        await message.answer(
+            f"📊 Отчёт за {period}:\n\n"
+            f"Доходы: {income:.2f} ₽\n"
+            f"Расходы: {expense:.2f} ₽\n"
+            f"Баланс: {balance:.2f} ₽",
+            reply_markup=reply_drive_menu()
+        )
+
     await state.clear()
 
 

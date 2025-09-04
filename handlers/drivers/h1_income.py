@@ -7,7 +7,6 @@ from keyboards.reply import reply_income_menu, reply_back_button
 from keyboards.reply import reply_drive_menu
 from services.google_sheets import add_record
 
-# from services.google_sheets import add_income
 
 router = Router()
 
@@ -78,7 +77,7 @@ async def confirm_income(message: Message, state: FSMContext):
     await message.answer(
         f"✅ Доход зарегистрирован:\n"
         f"Тип: {income_type}\n"
-        f"Сумма: {amount:.2f} ₽\n"
+        f"Сумма: {amount:.2f} бел. руб.\n"
         f"Комментарий: {comment}",
         reply_markup=reply_drive_menu()
     )
