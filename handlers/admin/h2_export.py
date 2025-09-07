@@ -1,32 +1,29 @@
 import os
-from datetime import datetime
-
 import pandas as pd
 from aiogram import Router, F
 from aiogram.types import FSInputFile, Message
+from datetime import datetime
 
 from keyboards.reply import reply_export_report
 from services.google_sheets import get_all_data
 
 router = Router()
 
-EXPORT_DIR = os.path.join(os.getcwd(), "exports")
+EXPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "exports")
+EXPORT_DIR = os.path.abspath(EXPORT_DIR)
 os.makedirs(EXPORT_DIR, exist_ok=True)
 
 
 @router.message(F.text == "Экспорт данных 📤")
 async def export_handler(message: Message):
-    """Экспорт всех данных и отправка админу"""
-    await message.answer("Данные экспортируются...", reply_markup=reply_export_report())
+    """Меню экспорта"""
+    await message.answer("📂 Выберите период для экспорта:", reply_markup=reply_export_report())
 
 
 @router.message(F.text.in_(["📆 За день", "📅 За месяц", "⌚ За всё время"]))
 async def export_report_handler(message: Message):
-    """Выгрузка данных по выбранному периоду"""
+    """Выгрузка отчёта в Excel"""
     all_data = get_all_data()
-    if not all_data or len(all_data) < 2:
-        await message.answer("❌ Данных нет.")
-        return
 
     columns = [col.strip().lower() for col in all_data[0]]
     df = pd.DataFrame(all_data[1:], columns=columns)
@@ -39,10 +36,11 @@ async def export_report_handler(message: Message):
     if period_text == "📆 За день":
         df = df[df["дата"] == now.date()]
         file_name = f"export_day_{now.strftime('%Y-%m-%d')}.xlsx"
+
     elif period_text == "📅 За месяц":
-        df = df[(df["дата"].apply(lambda d: d.month)) == now.month]
-        df = df[df["дата"].apply(lambda d: d.year) == now.year]
+        df = df[(df["дата"].apply(lambda d: d and d.month == now.month and d.year == now.year))]
         file_name = f"export_month_{now.strftime('%Y-%m')}.xlsx"
+
     else:
         file_name = f"export_all_{now.strftime('%Y-%m-%d')}.xlsx"
 
@@ -54,17 +52,27 @@ async def export_report_handler(message: Message):
 
     with pd.ExcelWriter(file_path, engine="xlsxwriter") as writer:
         df.to_excel(writer, sheet_name="Все записи", index=False)
-        worksheet = writer.sheets["Все записи"]
-        for i, col in enumerate(df.columns):
-            max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
-            worksheet.set_column(i, i, max_len)
+
+        for sheet_name, sheet_df in {"Все записи": df}.items():
+            worksheet = writer.sheets[sheet_name]
+            for idx, col in enumerate(sheet_df.columns):
+                max_len = max(
+                    sheet_df[col].astype(str).map(len).max(),
+                    len(col)
+                ) + 2
+                worksheet.set_column(idx, idx, max_len)
 
         for user, user_df in df.groupby("имя"):
-            user_df.to_excel(writer, sheet_name=str(user)[:31], index=False)
-            user_ws = writer.sheets[str(user)[:31]]
-            for i, col in enumerate(user_df.columns):
-                max_len = max(user_df[col].astype(str).map(len).max(), len(col)) + 2
-                user_ws.set_column(i, i, max_len)
+            sheet_name = str(user)[:31]
+            user_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+            worksheet = writer.sheets[sheet_name]
+            for idx, col in enumerate(user_df.columns):
+                max_len = max(
+                    user_df[col].astype(str).map(len).max(),
+                    len(col)
+                ) + 2
+                worksheet.set_column(idx, idx, max_len)
 
         summary = (
             df.groupby("имя")["сумма"]
@@ -73,12 +81,16 @@ async def export_report_handler(message: Message):
         )
         summary.rename(columns={"сумма": "Итого"}, inplace=True)
         summary.to_excel(writer, sheet_name="Сводка", index=False)
-        summary_ws = writer.sheets["Сводка"]
-        for i, col in enumerate(summary.columns):
-            max_len = max(summary[col].astype(str).map(len).max(), len(col)) + 2
-            summary_ws.set_column(i, i, max_len)
+
+        worksheet = writer.sheets["Сводка"]
+        for idx, col in enumerate(summary.columns):
+            max_len = max(
+                summary[col].astype(str).map(len).max(),
+                len(col)
+            ) + 2
+            worksheet.set_column(idx, idx, max_len)
 
     await message.answer_document(
         FSInputFile(file_path),
-        caption=f"Экспорт данных за {period_text}",
+        caption=f"✅ Экспорт данных за {period_text}",
     )
