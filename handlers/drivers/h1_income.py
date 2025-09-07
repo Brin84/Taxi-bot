@@ -21,7 +21,7 @@ class IncomeStates(StatesGroup):
 async def start_income(message: Message, state: FSMContext):
     """Меню добавления дохода"""
     await message.answer(
-        "Выберите кнопку для типа дохода🔽",
+        "Выберите кнопку для типа дохода 🔽",
         reply_markup=reply_income_menu()
     )
     await state.set_state(IncomeStates.choosing_type)
@@ -31,7 +31,9 @@ async def start_income(message: Message, state: FSMContext):
 async def ask_income_amount(message: Message, state: FSMContext):
     """Запрос суммы дохода"""
     await state.update_data(income_type=message.text)
-    await message.answer("Введите сумму числом: Например (20.00)", reply_markup=reply_back_button())
+    await message.answer("Введите сумму числом,\nПример:\n `7.70`",
+                         parse_mode="Markdown",
+                         reply_markup=reply_back_button())
     await state.set_state(IncomeStates.waiting_amount)
 
 
@@ -50,7 +52,9 @@ async def ask_income_comment(message: Message, state: FSMContext):
         return
 
     await state.update_data(amount=amount)
-    await message.answer("Добавьте комментарий (например: Гоголя 17)", reply_markup=reply_back_button())
+    await message.answer("Добавьте адрес \nПример 👇\n`Гоголя 17`",
+                         parse_mode="Markdown",
+                         reply_markup=reply_back_button())
     await state.set_state(IncomeStates.waiting_comment)
 
 
@@ -77,7 +81,7 @@ async def confirm_income(message: Message, state: FSMContext):
     await message.answer(
         f"✅ Доход зарегистрирован:\n"
         f"Тип: {income_type}\n"
-        f"Сумма: {amount:.2f} бел. руб.\n"
+        f"Сумма: {amount:.2f} byn.\n"
         f"Комментарий: {comment}",
         reply_markup=reply_drive_menu()
     )

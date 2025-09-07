@@ -17,11 +17,10 @@ class ExpenseStates(StatesGroup):
 async def start_expense(message: Message, state: FSMContext):
     """Начало добавления расхода"""
     await message.answer(
-        "<b>Укажите расход:</b>\n"
-        "Пример:⏬\n"
-        "<i>20 топливо</i>\n",
-        reply_markup=reply_expense_back(),
-        parse_mode="HTML"
+        "Укажите расход:\nПример:⏬\n`20.30 топливо`",
+        parse_mode="Markdown",
+        reply_markup=reply_expense_back()
+
     )
     await state.set_state(ExpenseStates.waiting_for_amount_and_comment)
 
@@ -53,7 +52,7 @@ async def process_expense(message: Message, state: FSMContext):
 
     await message.answer(
         f"✅ Расход зарегистрирован:\n"
-        f"Сумма: {amount:.2f} ₽\n"
+        f"Сумма: {amount:.2f} byn.\n"
         f"Комментарий: {comment}",
         reply_markup=reply_drive_menu()
     )
