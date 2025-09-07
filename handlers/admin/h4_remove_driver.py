@@ -33,7 +33,7 @@ async def confirm_remove_driver(message: Message, state: FSMContext):
     try:
         driver_id = int(message.text)
     except ValueError:
-        await message.answer("❌ Введите корректный числовой Telegram ID.")
+        await message.answer("❌ Введите Telegram ID водителя.")
         return
 
     add_record(
