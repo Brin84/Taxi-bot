@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  taxi-bot:
+    build: .
+    container_name: taxi-bot
+    restart: always
+    volumes:
+      - ./exports:/app/exports
+      - ./services/creds:/app/services/creds
+      - ./config:/app/config
+      - ./.env:/app/.env
+    environment:
+      - TOKEN=${TOKEN}
+      - ADMIN=${ADMIN}
+      - GOOGLE_CREDS_PATH=/app/services/creds/taxi_bot_google_sheets.json
+    command: python -u main.py
