@@ -137,7 +137,7 @@ def get_admin_summary(period: str):
     total_expense = 0
     for user, data in summary.items():
         lines.append(
-            f"👤 {user} — Доход: {data['income']:.2f} Byn, Расход: {data['expense']:.2f} Byn"
+            f"👤 {user} :\nДоход: {data['income']:.2f} Byn\nРасход: {data['expense']:.2f} Byn"
         )
         total_income += data["income"]
         total_expense += data["expense"]
